@@ -1,0 +1,175 @@
+@font-face {
+    font-family: 'Copperplate Gothic Bold';
+    src: url(assets/fonts/copperplategothic_bold.ttf);
+}
+
+:root {
+    --fundo: #00190e;
+    --gold-start:#d4af37;
+    --gold-mid:#e6c55a;
+    --gold-end:#f7df9a;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    background-color: var(--fundo);
+    font-family: system-ui;
+    color: var(--gold-mid);
+    height: 100vh;
+}
+
+.logo {height: 40%;}
+.logo img {width: 100%;height: 100%;}
+.left-side {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px;
+    align-items: center;
+}
+
+nav {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    align-items: flex-start;
+}
+nav > *:hover{
+    color: var(--gold-end);
+}
+
+.right-side {
+    display:flex;
+    flex-direction:column;
+    justify-content: center;
+    gap:18px;
+    width:50%;
+    background:linear-gradient(rgba(255,255,255,0.05), rgba(255, 255, 255, 0.01));
+    border-radius: 36px 0 0 36px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    padding:28px;
+}
+
+main {
+    justify-self: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+main p, h3, label {color: var(--gold-mid);}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background:linear-gradient(0deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(212,175,55,0.12);
+    padding: 32px;
+    border-radius: 16px;
+    width: 90%;
+    min-width: 350px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.card-title {
+    margin: 0 auto;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+label {
+    display: block;
+    font-size: 0.9rem;
+    margin: 5px;
+}
+
+input, select, button {
+    border: 1px solid var(--gold-mid);
+    border-radius: 16px;
+    height: 40px;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--gold-end);
+}
+
+#data-hora {
+    display: flex;
+    gap: 10px
+}
+#data-hora > * {
+    flex: 1;
+}
+
+.btn {
+    margin-top: 12px;
+    display:inline-block;
+    background:linear-gradient(180deg,var(--gold-start),var(--gold-mid));
+    color:var(--fundo);
+    font-weight:800;
+    border:none;
+    cursor:pointer;
+    transition:transform .1s ease;
+    width:100%;
+    font-size:15px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+.btn:active{ transform:scale(0.98) }
+
+footer {
+    align-self: center;
+    color: var(--gold-mid);
+}
+
+.loader {
+    border: 8px solid #d4af37;
+    border-top: 8px solid #f7df9a;
+    border-radius: 50%;
+
+    margin: 0 auto;
+
+    width: 50px;
+    height: 50px;
+
+    animation: spin .25s linear infinite;
+}
+
+@keyframes spin {
+    0% {transform: rotate(0deg);}
+    100% {transform: rotate(360deg);}
+}
+
+@media (max-width: 900px) {
+    body {
+        flex-direction: column;
+        justify-content: start;
+    }
+    .left-side {
+        flex-direction: row;
+        box-shadow: 0px 10px 9px rgba(0, 0, 0, 0.6);
+        width: 100%;
+        gap: 12px;
+        height: fit-content;
+        z-index: 3;
+    }
+    .left-side h1 {font-size: 1.5rem;}
+    .logo {
+        width: 64px;
+        height: unset;
+    }
+
+    .right-side {
+        background:linear-gradient(rgba(255,255,255,0.05), rgba(255, 255, 255, 0.01));
+        width: 100%;
+        height: 100%;
+        border-radius: unset;
+        box-shadow: unset;
+    }
+}

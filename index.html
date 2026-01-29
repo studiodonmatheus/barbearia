@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Don Matheus</title>
+    <link rel="stylesheet" href="styles/reset.css">
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="shortcut icon" href="assets/logo/trasnparent.png" type="image/x-icon">
+</head>
+<body>
+    <section class="left-side">
+        <a href="/" class="logo"><img src="assets/logo/trasnparent.png" draggable="false"></a>
+        <!-- <nav>
+            
+        </nav> -->
+    </section>
+
+    <section class="right-side">
+        <main>
+            <div class="card" id="agendar-card">
+                <h3 class="card-title">Marcar um Horário</h3>
+                <form action="" id="agendar">
+                    <label for="nome">Nome</label>
+                    <input id="nome" name="nome" placeholder="Seu nome" type="text" required>
+                    
+                    <label for="telefone">Telefone</label>
+                    <input
+                        id="telefone"
+                        name="telefone" 
+                        placeholder="(00) 9 0000-0000" 
+                        type="tel" 
+                        pattern="^(\(?\d{2}\)?\s?)?(\d{4,5}-?\d{4})$" 
+                        required
+                    >
+    
+                    <div id="data-hora">
+                        <div>
+                            <label for="data">Data</label>
+                            <input id="data" name="data" type="date" required>
+                        </div>
+                        <div>
+                            <label for="hora">Hora</label>
+                            <input 
+                                id="hora" 
+                                name="hora" 
+                                type="time" 
+                                min="10:00" 
+                                max="19:00" 
+                                required
+                                onchange="this.reportValidity()"
+                            >
+                        </div>
+                    </div>
+    
+                    <label for="servico">Serviço</label>
+                    <select id="servico" name="servico" required>
+                        <!-- 
+                            Fazer com que o preço de cada item seja 
+                            consultado no banco de dados
+                        -->
+                        <option value="Corte">Corte (R$35,00)</option>
+                        <option value="Barba">Barba (R$25,00)</option>
+                        <option value="Corte e Barba">Corte e Barba (R$50,00)</option>
+                        <option value="Sobrancelha">Sobrancelha (R$12,00)</option>
+                        <option value="Pézinho">Pézinho (R$10,00)</option>
+                        <option value="Luzes">Luzes (R$70,00)</option>
+                        <option value="Platinado">Platinado (R$120,00)</option>
+                    </select>
+    
+                    <button class="btn" type="submit">MARCAR</button>
+                </form>
+            </div>
+        </main>
+    
+        <footer>
+            <p>© <span id="ano">2025</span> • Studio Don Matheus</p>
+        </footer>
+    </section>
+    <script src="scripts/updateYear.js"></script>
+    <script src="scripts/agendar.js"></script>
+</body>
+</html>

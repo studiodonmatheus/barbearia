@@ -1,0 +1,16 @@
+/* O Seletor Universal (*) afeta TUDO */
+* {
+  margin: 0; /* Remove margens externas padrão */
+  padding: 0; /* Remove preenchimento interno padrão */
+  box-sizing: border-box; /* **MUITO IMPORTANTE:** Faz com que padding e border não aumentem o tamanho total do elemento */
+}
+
+/* Opcional: Remova o estilo de lista e a decoração de links */
+ul, ol {
+  list-style: none; /* Remove bolinhas/números de listas */
+}
+
+a {
+  text-decoration: none; /* Remove o sublinhado dos links */
+  color: inherit; /* Faz com que o link herde a cor do texto pai */
+}
