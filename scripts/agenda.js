@@ -30,6 +30,13 @@ function minutosDoHorario(hora) {
     return horas * 60 + minutos + segundos / 60;
 }
 
+function horarioJaPassou(data, hora) {
+    const inicioHorario = new Date(data);
+    const [horas, minutos] = hora.split(':').map(Number);
+    inicioHorario.setHours(horas, minutos, 0, 0);
+    return inicioHorario <= new Date();
+}
+
 function reservaSobrepoeHorario(data, horaInicio) {
     const dataFormatada = formatarDataInput(data);
     const inicioBloco = minutosDoHorario(horaInicio);
@@ -48,6 +55,15 @@ function formatarCabecalho(data) {
         day: '2-digit',
         month: '2-digit'
     }).format(data).replace('.', '');
+}
+
+function atualizarResumoAgenda() {
+    const [ano, mes, dia] = formatarDataInput(dataFocada).split('-');
+    const resumo = document.getElementById('agenda-summary-value');
+
+    resumo.textContent = horarioSelecionado
+        ? `${dia}/${mes} às ${horarioSelecionado.split(' ')[1]}`
+        : `${dia}/${mes}/${ano}`;
 }
 
 function moverFoco(dias) {
@@ -71,7 +87,8 @@ function renderizarColuna(containerId, data, interativa) {
         const chave = criarChaveHorario(data, horaFormatada);
         const botao = document.createElement('button');
         const reservado = reservaSobrepoeHorario(data, horaFormatada);
-        const status = horarios[chave] || (reservado ? 'reservado' : null);
+        const expirado = horarioJaPassou(data, horaFormatada);
+        const status = horarios[chave] || (reservado ? 'reservado' : expirado ? 'inativo' : null);
 
         botao.type = 'button';
         botao.className = 'timeblock';
@@ -89,6 +106,11 @@ function renderizarColuna(containerId, data, interativa) {
 
         if (interativa && !botao.disabled) {
             botao.addEventListener('click', () => {
+                if (horarioJaPassou(data, horaFormatada)) {
+                    renderizarAgenda();
+                    return;
+                }
+
                 horarioSelecionado = horarioSelecionado === chave ? null : chave;
                 document.getElementById('agenda-feedback').textContent = '';
                 renderizarAgenda();
@@ -109,6 +131,7 @@ function renderizarAgenda() {
     seletorData.min = formatarDataInput(hoje);
     seletorData.max = formatarDataInput(limiteData);
     seletorData.value = formatarDataInput(dataFocada);
+    atualizarResumoAgenda();
 
     document.getElementById('agenda-prev').disabled = dataFocada <= hoje;
     document.getElementById('agenda-next').disabled = dataFocada >= limiteData;

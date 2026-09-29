@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio Don Matheus</title>
+    <title>Don Matheus | Barbearia</title>
     <link rel="stylesheet" href="styles/reset.css">
     <link rel="stylesheet" href="styles/style.css">
     <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
@@ -13,7 +13,12 @@
 <body>
     <header>
         <h1>Don Matheus</h1>
-        <button class="nav-buttons" id="login-button">LOGIN</button>
+        <button class="nav-buttons" id="login-button" type="button" aria-label="Entrar" title="Entrar">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                <circle cx="12" cy="8" r="4"></circle>
+            </svg>
+        </button>
     </header>
     
     <main>
@@ -36,30 +41,44 @@
                     <option value="Corte e Barba">Corte e Barba</option>
                 </select>
                 
-                <div class="agenda-selector">
-                    <div class="agenda-date-controls">
-                        <button class="agenda-nav" id="agenda-prev" type="button" aria-label="Dia anterior">&lt;</button>
-                        <label for="agenda-date">Escolha a data</label>
-                        <input class="input-box" id="agenda-date" type="date">
-                        <button class="agenda-nav" id="agenda-next" type="button" aria-label="Próximo dia">&gt;</button>
+                <details class="agenda-selector" id="agenda-panel">
+                    <summary class="agenda-summary">
+                        <span>Escolher data e horário</span>
+                        <span class="agenda-summary-value" id="agenda-summary-value">Hoje</span>
+                    </summary>
+                    <div class="agenda-expanded">
+                        <div class="agenda-date-controls">
+                            <button class="agenda-nav" id="agenda-prev" type="button" aria-label="Dia anterior">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m15 18-6-6 6-6"></path>
+                                </svg>
+                            </button>
+                            <label for="agenda-date">Escolha a data</label>
+                            <input class="input-box" id="agenda-date" type="date">
+                            <button class="agenda-nav" id="agenda-next" type="button" aria-label="Próximo dia">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m9 18 6-6-6-6"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="agenda-days" aria-label="Horários próximos">
+                            <section class="agenda-day" id="agenda-previous-day">
+                                <button class="agenda-day-header" id="agenda-previous-header" type="button"></button>
+                                <div class="time-slots" id="agenda-previous-slots"></div>
+                            </section>
+                            <section class="agenda-day agenda-day-current" id="agenda-current-day">
+                                <div class="agenda-day-header" id="agenda-current-header"></div>
+                                <div class="time-slots" id="agenda-current-slots"></div>
+                            </section>
+                            <section class="agenda-day" id="agenda-next-day">
+                                <button class="agenda-day-header" id="agenda-next-header" type="button"></button>
+                                <div class="time-slots" id="agenda-next-slots"></div>
+                            </section>
+                        </div>
+                        <p class="agenda-legend"><span class="agenda-legend-marker" aria-hidden="true"></span> Horário indisponível</p>
                     </div>
-                    <div class="agenda-days" aria-label="Horários próximos">
-                        <section class="agenda-day" id="agenda-previous-day">
-                            <button class="agenda-day-header" id="agenda-previous-header" type="button"></button>
-                            <div class="time-slots" id="agenda-previous-slots"></div>
-                        </section>
-                        <section class="agenda-day agenda-day-current" id="agenda-current-day">
-                            <div class="agenda-day-header" id="agenda-current-header"></div>
-                            <div class="time-slots" id="agenda-current-slots"></div>
-                        </section>
-                        <section class="agenda-day" id="agenda-next-day">
-                            <button class="agenda-day-header" id="agenda-next-header" type="button"></button>
-                            <div class="time-slots" id="agenda-next-slots"></div>
-                        </section>
-                    </div>
-                </div>
+                </details>
 
-                <p class="agenda-legend"><span class="agenda-legend-marker" aria-hidden="true"></span> Horário indisponível</p>
                 <p class="agenda-feedback" id="agenda-feedback" role="status" aria-live="polite"></p>
                 <button class="agenda-retry" id="retry-agenda" type="button" hidden>Recarregar horários</button>
                 <button id="book-appointment" type="button">AGENDAR</button>
