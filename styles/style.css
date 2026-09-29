@@ -282,6 +282,11 @@ button.agenda-day-header:hover:not(:disabled) {
     font-weight: 900;
 }
 
+.timeblock.reservado.ativo {
+    background-color: rgba(217, 83, 79, 0.2);
+    color: #d9534f;
+}
+
 .timeblock.reservado {
     color: #d9534f;
     opacity: 0.6;
@@ -354,7 +359,7 @@ button {
     margin-top: 0;
 }
 
-button:hover {
+button:hover:not(:disabled) {
     background-color: var(--accent-gold-hover);
     transform: translateY(-1px);
 }

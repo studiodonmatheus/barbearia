@@ -49,6 +49,14 @@ function reservaSobrepoeHorario(data, horaInicio) {
     });
 }
 
+function horarioIndisponivel(data, hora) {
+    const status = horarios[criarChaveHorario(data, hora)];
+    return status === 'reservado'
+        || status === 'inativo'
+        || reservaSobrepoeHorario(data, hora)
+        || horarioJaPassou(data, hora);
+}
+
 function formatarCabecalho(data) {
     return new Intl.DateTimeFormat('pt-BR', {
         weekday: 'short',
@@ -86,27 +94,30 @@ function renderizarColuna(containerId, data, interativa) {
         const horaFormatada = `${String(hora).padStart(2, '0')}:00`;
         const chave = criarChaveHorario(data, horaFormatada);
         const botao = document.createElement('button');
-        const reservado = reservaSobrepoeHorario(data, horaFormatada);
+        const reservado = horarios[chave] === 'reservado'
+            || reservaSobrepoeHorario(data, horaFormatada);
         const expirado = horarioJaPassou(data, horaFormatada);
-        const status = horarios[chave] || (reservado ? 'reservado' : expirado ? 'inativo' : null);
+        const status = reservado ? 'reservado' : horarios[chave] || (expirado ? 'inativo' : null);
 
         botao.type = 'button';
         botao.className = 'timeblock';
         botao.textContent = horaFormatada;
         botao.disabled = !interativa || disponibilidade !== 'pronta' || salvandoReserva
-            || status === 'reservado'
-            || status === 'inativo';
+            || horarioIndisponivel(data, horaFormatada);
         if (status === 'reservado') {
             botao.setAttribute('aria-label', `${horaFormatada} - horário indisponível`);
             botao.title = 'Horário indisponível';
         }
 
         if (status) botao.classList.add(status);
-        if (chave === horarioSelecionado) botao.classList.add('ativo');
+        if (chave === horarioSelecionado && status !== 'reservado' && status !== 'inativo') {
+            botao.classList.add('ativo');
+        }
 
         if (interativa && !botao.disabled) {
             botao.addEventListener('click', () => {
-                if (horarioJaPassou(data, horaFormatada)) {
+                if (horarioIndisponivel(data, horaFormatada)) {
+                    if (horarioSelecionado === chave) horarioSelecionado = null;
                     renderizarAgenda();
                     return;
                 }
