@@ -110,9 +110,7 @@ function renderizarColuna(containerId, data, interativa) {
         }
 
         if (status) botao.classList.add(status);
-        if (chave === horarioSelecionado && status !== 'reservado' && status !== 'inativo') {
-            botao.classList.add('ativo');
-        }
+        if (chave === horarioSelecionado && !botao.disabled) botao.classList.add('ativo');
 
         if (interativa && !botao.disabled) {
             botao.addEventListener('click', () => {
@@ -190,6 +188,15 @@ async function carregarHorarios() {
 document.getElementById('agenda-prev').addEventListener('click', () => moverFoco(-1));
 document.getElementById('agenda-next').addEventListener('click', () => moverFoco(1));
 document.getElementById('retry-agenda').addEventListener('click', carregarHorarios);
+
+const painelAgenda = document.getElementById('agenda-panel');
+painelAgenda.addEventListener('toggle', () => {
+    if (!painelAgenda.open) return;
+
+    requestAnimationFrame(() => {
+        painelAgenda.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+});
 
 document.getElementById('agenda-date').addEventListener('change', (event) => {
     if (!event.target.value) return;

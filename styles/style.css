@@ -71,9 +71,16 @@ main {
     padding: 30px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
     align-items: center;
     color: var(--primary-text);
+}
+
+.location-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 520px;
 }
 
 .left-side p {
@@ -82,11 +89,92 @@ main {
     font-size: 1.05rem;
 }
 
+.location-content .location-eyebrow {
+    margin: 0;
+    color: var(--accent-gold);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.location-content h2 {
+    margin: -10px 0 0;
+    color: var(--primary-text);
+    font-size: 1.3rem;
+}
+
+.location-content .location-description {
+    margin: -8px 0 0;
+    font-size: 0.95rem;
+}
+
+.location-directions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    padding: 10px 12px;
+    border: 1px solid var(--accent-gold);
+    border-radius: 4px;
+    color: var(--accent-gold);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.location-directions:hover {
+    background-color: var(--accent-gold);
+    color: var(--primary-color);
+}
+
+.location-directions svg {
+    width: 16px;
+    height: 16px;
+}
+
+.map-disclosure {
+    border-top: 1px solid var(--border-color);
+}
+
+.map-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    color: var(--secondary-text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    list-style: none;
+}
+
+.map-summary::-webkit-details-marker {
+    display: none;
+}
+
+.map-summary svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.2s ease;
+}
+
+.map-disclosure[open] .map-summary svg {
+    transform: rotate(180deg);
+}
+
+.map-frame {
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
 #mapa {
     width: 100%;
-    height: 300px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    height: auto;
+    aspect-ratio: 4 / 3;
+    border: 0;
 }
 
 .right-side {
@@ -112,6 +200,22 @@ main {
 .formulário label {
     font-size: 0.9rem;
     color: var(--secondary-text);
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.login-feedback {
+    margin: 0;
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+}
+
+.login-feedback:empty {
+    display: none;
 }
 
 .input-box {
@@ -274,6 +378,8 @@ button.agenda-day-header:hover:not(:disabled) {
 
 .timeblock:disabled {
     cursor: not-allowed;
+    pointer-events: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .timeblock.ativo {
@@ -285,6 +391,10 @@ button.agenda-day-header:hover:not(:disabled) {
 .timeblock.reservado.ativo {
     background-color: rgba(217, 83, 79, 0.2);
     color: #d9534f;
+}
+
+.timeblock:disabled.reservado {
+    background-color: rgba(217, 83, 79, 0.2);
 }
 
 .timeblock.reservado {
@@ -309,14 +419,15 @@ button.agenda-day-header:hover:not(:disabled) {
     gap: 8px;
     margin: 0;
     color: var(--secondary-text);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
 }
 
 .agenda-legend-marker {
-    width: 12px;
-    height: 12px;
-    border: 1px solid #d9534f;
-    background-color: rgba(217, 83, 79, 0.2);
+    flex: 0 0 9px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: #d9534f;
 }
 
 .agenda-feedback {
@@ -364,7 +475,7 @@ button:hover:not(:disabled) {
     transform: translateY(-1px);
 }
 
-button:active {
+button:active:not(:disabled) {
     transform: translateY(1px);
 }
 

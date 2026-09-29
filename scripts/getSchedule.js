@@ -1,8 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { supabase } from './supabaseClient.js'
 
-const URL = 'https://lbyerfbehukyloqzcaqp.supabase.co'
-const ANON_KEY = 'sb_publishable_DoAs0hIlXXOA1B212ZTn9Q_HyqdLUeM'
-const supabase = createClient(URL, ANON_KEY)
 const TABELA = 'Horarios'
 
 export async function obterHorarios(dataInicio, dataFim) {

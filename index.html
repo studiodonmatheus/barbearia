@@ -22,11 +22,31 @@
     </header>
     
     <main>
-        <section class="left-side">
-            <p>
-                Mantenha-se na régua ou mude seu visual por completo com Don Matheus! Faça uma visita e conheça nossos serviços.
-            </p>
-            <iframe id="mapa" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d228.35682120431682!2d-46.65049064662398!3d-23.686357444769772!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce45005d05c281%3A0xdeb1876a6dcaff3d!2sStudio%20Don%20Matheus!5e0!3m2!1spt-BR!2sbr!4v1787503799568!5m2!1spt-BR!2sbr" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <section class="left-side" aria-labelledby="location-title">
+            <div class="location-content">
+                <p class="location-eyebrow">Visita presencial</p>
+                <h2 id="location-title">Studio Don Matheus</h2>
+                <p class="location-description">Quer ir até o local? Consulte o mapa ou trace sua rota.</p>
+                <a class="location-directions" href="https://www.google.com/maps/dir/?api=1&destination=-23.686357444769772%2C-46.65049064662398" target="_blank" rel="noopener noreferrer">
+                    Como chegar
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 3h7v7"></path>
+                        <path d="M10 14 21 3"></path>
+                        <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path>
+                    </svg>
+                </a>
+                <details class="map-disclosure">
+                    <summary class="map-summary">
+                        <span>Ver mapa</span>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m6 9 6 6 6-6"></path>
+                        </svg>
+                    </summary>
+                    <div class="map-frame">
+                        <iframe id="mapa" title="Localização do Studio Don Matheus" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d228.35682120431682!2d-46.65049064662398!3d-23.686357444769772!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce45005d05c281%3A0xdeb1876a6dcaff3d!2sStudio%20Don%20Matheus!5e0!3m2!1spt-BR!2sbr!4v1787503799568!5m2!1spt-BR!2sbr" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                    </div>
+                </details>
+            </div>
         </section>
         
         <section class="right-side">
@@ -75,7 +95,7 @@
                                 <div class="time-slots" id="agenda-next-slots"></div>
                             </section>
                         </div>
-                        <p class="agenda-legend"><span class="agenda-legend-marker" aria-hidden="true"></span> Horário indisponível</p>
+                        <p class="agenda-legend"><span class="agenda-legend-marker" aria-hidden="true"></span> Em vermelho: horário reservado</p>
                     </div>
                 </details>
 
@@ -85,14 +105,21 @@
             </div>
         </section>
         
-        <dialog class="formulário" id="login-dialog">
-            <input class="input-box" id="nomeDeUsuario" type="text" placeholder="Usuário">
-            <input class="input-box" id="senhaDeUsuario" type="password" placeholder="Senha">
-            <button>Entrar</button>
+        <dialog class="formulário" id="login-dialog" aria-labelledby="login-title">
+            <h2 id="login-title">Entrar</h2>
+            <form class="login-form" id="login-form" method="dialog">
+                <label for="login-email">E-mail</label>
+                <input class="input-box" id="login-email" name="email" type="email" autocomplete="username" required>
+                <label for="login-password">Senha</label>
+                <input class="input-box" id="login-password" name="password" type="password" autocomplete="current-password" required>
+                <p class="login-feedback" id="login-feedback" role="status" aria-live="polite"></p>
+                <button id="login-submit" type="submit">Entrar</button>
+            </form>
         </dialog>
     </main>
     
     <script src="scripts/showLoginCard.js"></script>
+    <script type="module" src="scripts/login.js"></script>
     <script type="module" src="scripts/agenda.js"></script>
 </body>
 </html>

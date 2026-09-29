@@ -2,6 +2,7 @@ const loginButton = document.getElementById("login-button")
 const loginDialog = document.getElementById("login-dialog")
 
 loginButton.addEventListener("click", () => {
+    if (loginButton.dataset.authenticated === "true") return
     loginDialog.showModal()
 })
 
