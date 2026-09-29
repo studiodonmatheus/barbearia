@@ -5,6 +5,7 @@ hoje.setHours(0, 0, 0, 0);
 
 const limiteData = new Date(hoje);
 limiteData.setDate(limiteData.getDate() + 28);
+const atrasoMaximoTimer = 2_147_000_000;
 
 let dataFocada = new Date(hoje);
 let horarioSelecionado = null;
@@ -12,6 +13,7 @@ let horarios = {};
 let reservas = [];
 let disponibilidade = 'carregando';
 let salvandoReserva = false;
+let temporizadorExpediente = null;
 const configuracaoAgenda = { abertura: 10, fechamento: 17 };
 
 function formatarDataInput(data) {
@@ -57,6 +59,75 @@ function horarioIndisponivel(data, hora) {
         || horarioJaPassou(data, hora);
 }
 
+function formatarHorario(hora) {
+    return `${String(hora).padStart(2, '0')}:00`;
+}
+
+function diaTemHorarioDisponivel(data) {
+    for (let hora = configuracaoAgenda.abertura; hora <= configuracaoAgenda.fechamento; hora += 1) {
+        if (!horarioIndisponivel(data, formatarHorario(hora))) return true;
+    }
+
+    return false;
+}
+
+function buscarProximoDiaDisponivel(dataAtual) {
+    const dataCandidata = new Date(dataAtual);
+    dataCandidata.setDate(dataCandidata.getDate() + 1);
+
+    while (dataCandidata <= limiteData) {
+        if (diaTemHorarioDisponivel(dataCandidata)) return new Date(dataCandidata);
+        dataCandidata.setDate(dataCandidata.getDate() + 1);
+    }
+
+    return null;
+}
+
+function avancarSeDiaSemDisponibilidade() {
+    if (disponibilidade !== 'pronta' || diaTemHorarioDisponivel(dataFocada)) return false;
+
+    const proximaDataDisponivel = buscarProximoDiaDisponivel(dataFocada);
+    horarioSelecionado = null;
+    if (!proximaDataDisponivel) {
+        document.getElementById('agenda-feedback').textContent = 'Nenhum horário disponível nos próximos 28 dias.';
+        return false;
+    }
+
+    dataFocada = proximaDataDisponivel;
+    horarioSelecionado = null;
+    document.getElementById('agenda-feedback').textContent = '';
+    return true;
+}
+
+function agendarAvancoExpediente() {
+    clearTimeout(temporizadorExpediente);
+    temporizadorExpediente = null;
+
+    if (disponibilidade !== 'pronta') return;
+
+    const encerramento = new Date(dataFocada);
+    encerramento.setHours(configuracaoAgenda.fechamento, 0, 0, 0);
+    const tempoRestante = encerramento.getTime() - Date.now();
+    if (tempoRestante <= 0) return;
+
+    temporizadorExpediente = setTimeout(() => {
+        if (Date.now() >= encerramento.getTime()) {
+            avancarSeDiaSemDisponibilidade();
+            renderizarAgenda();
+        }
+        agendarAvancoExpediente();
+    }, Math.min(tempoRestante, atrasoMaximoTimer));
+}
+
+function focarData(data) {
+    dataFocada = new Date(data);
+    horarioSelecionado = null;
+    document.getElementById('agenda-feedback').textContent = '';
+    avancarSeDiaSemDisponibilidade();
+    renderizarAgenda();
+    agendarAvancoExpediente();
+}
+
 function formatarCabecalho(data) {
     return new Intl.DateTimeFormat('pt-BR', {
         weekday: 'short',
@@ -79,10 +150,7 @@ function moverFoco(dias) {
     novaData.setDate(novaData.getDate() + dias);
 
     if (novaData >= hoje && novaData <= limiteData) {
-        dataFocada = novaData;
-        horarioSelecionado = null;
-        document.getElementById('agenda-feedback').textContent = '';
-        renderizarAgenda();
+        focarData(novaData);
     }
 }
 
@@ -91,7 +159,7 @@ function renderizarColuna(containerId, data, interativa) {
     container.replaceChildren();
 
     for (let hora = configuracaoAgenda.abertura; hora <= configuracaoAgenda.fechamento; hora += 1) {
-        const horaFormatada = `${String(hora).padStart(2, '0')}:00`;
+        const horaFormatada = formatarHorario(hora);
         const chave = criarChaveHorario(data, horaFormatada);
         const botao = document.createElement('button');
         const reservado = horarios[chave] === 'reservado'
@@ -176,6 +244,7 @@ async function carregarHorarios() {
         reservas = await obterHorarios(formatarDataInput(hoje), formatarDataInput(limiteData));
         disponibilidade = 'pronta';
         document.getElementById('agenda-feedback').textContent = '';
+        avancarSeDiaSemDisponibilidade();
     } catch (error) {
         console.error('Erro ao carregar horários:', error);
         disponibilidade = 'erro';
@@ -183,6 +252,7 @@ async function carregarHorarios() {
     }
 
     renderizarAgenda();
+    agendarAvancoExpediente();
 }
 
 document.getElementById('agenda-prev').addEventListener('click', () => moverFoco(-1));
@@ -205,10 +275,7 @@ document.getElementById('agenda-date').addEventListener('change', (event) => {
     dataEscolhida.setHours(0, 0, 0, 0);
 
     if (dataEscolhida >= hoje && dataEscolhida <= limiteData) {
-        dataFocada = dataEscolhida;
-        horarioSelecionado = null;
-        document.getElementById('agenda-feedback').textContent = '';
-        renderizarAgenda();
+        focarData(dataEscolhida);
     }
 });
 
@@ -223,7 +290,15 @@ document.getElementById('book-appointment').addEventListener('click', async () =
     const servico = document.getElementById('Seletor de Serviço').value;
     const [data, hora] = horarioSelecionado.split(' ');
     const [ano, mes, dia] = data.split('-');
+    const dataReserva = new Date(`${data}T00:00:00`);
     const horaFim = `${String(Number(hora.slice(0, 2)) + 1).padStart(2, '0')}:00:00`;
+
+    if (horarioIndisponivel(dataReserva, hora)) {
+        horarioSelecionado = null;
+        feedback.textContent = 'Esse horário não está mais disponível. Escolha outro.';
+        renderizarAgenda();
+        return;
+    }
 
     salvandoReserva = true;
     feedback.textContent = 'Confirmando disponibilidade e salvando a reserva...';
@@ -233,7 +308,7 @@ document.getElementById('book-appointment').addEventListener('click', async () =
         const reservasDoDia = await obterHorarios(data, data);
         reservas = reservas.filter((reserva) => reserva.dia_selecionado !== data).concat(reservasDoDia);
 
-        if (horarios[horarioSelecionado] || reservaSobrepoeHorario(new Date(`${data}T00:00:00`), hora)) {
+        if (horarioIndisponivel(dataReserva, hora)) {
             horarioSelecionado = null;
             feedback.textContent = 'Esse horário acabou de ficar indisponível. Escolha outro.';
             return;
@@ -252,15 +327,22 @@ document.getElementById('book-appointment').addEventListener('click', async () =
         feedback.textContent = 'Não foi possível salvar a reserva. Verifique as permissões do banco e tente novamente.';
     } finally {
         salvandoReserva = false;
+        avancarSeDiaSemDisponibilidade();
         renderizarAgenda();
+        agendarAvancoExpediente();
     }
 });
 
 window.alterarGradeHorarios = (abertura, fechamento) => {
+    if (!Number.isInteger(abertura) || !Number.isInteger(fechamento)
+        || abertura < 0 || fechamento > 23 || abertura > fechamento) return;
+
     configuracaoAgenda.abertura = abertura;
     configuracaoAgenda.fechamento = fechamento;
     horarioSelecionado = null;
+    avancarSeDiaSemDisponibilidade();
     renderizarAgenda();
+    agendarAvancoExpediente();
 };
 
 window.desativarHorario = (data, hora) => {

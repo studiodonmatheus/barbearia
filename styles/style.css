@@ -64,7 +64,7 @@ header h1 {
 main {
     flex: 1;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
 }
 
 .left-side {
@@ -92,9 +92,9 @@ main {
 .location-content .location-eyebrow {
     margin: 0;
     color: var(--accent-gold);
-    font-size: 0.75rem;
+    font-size: 1.3rem;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
 }
 
 .location-content h2 {
@@ -178,6 +178,7 @@ main {
 }
 
 .right-side {
+    order: -1;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -501,7 +502,7 @@ dialog::backdrop {
 }
 
 
-@media (min-width: 700px) {
+@media (min-width: 900px) {
     main {
         flex-direction: row;
         background-color: var(--primary-color);
@@ -516,6 +517,7 @@ dialog::backdrop {
     }
 
     .right-side {
+        order: 0;
         flex: 1;
         display: flex;
         align-items: center;
