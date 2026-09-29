@@ -1,0 +1,50 @@
+/* 1. Global Box-Sizing & Margin/Padding Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 2. Seamless Viewport and Smooth Scrolling Setup */
+html {
+  color-scheme: light dark;
+}
+
+body {
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 3. Text and Core Element Baseline Reverts */
+h1, h2, h3, h4, h5, h6 {
+  font-size: revert;
+  font-weight: revert;
+}
+
+ol, ul {
+  list-style: revert;
+}
+
+/* 4. Form Controls Typography Inheritance Fix */
+input, button, textarea, select {
+  font: inherit;
+}
+
+/* 5. Responsive Media Adjustments */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* 6. Textarea Layout Prevent-Breakages */
+textarea {
+  resize: vertical;
+}
+
+/* 7. Utility Class to Strip Custom Styles back to Browser Defaults */
+.revert-all {
+  all: revert;
+}

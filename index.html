@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Don Matheus | Barbearia</title>
+    <link rel="stylesheet" href="styles/reset.css">
+    <link rel="stylesheet" href="styles/style.css">
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
+    <!-- <script src="https://unpkg.com/@supabase/supabase-js@2"></script> -->
+</head>
+
+<body>
+    <header>
+        <h1>Don Matheus</h1>
+        <button class="nav-buttons" id="login-button">LOGIN</button>
+    </header>
+    
+    <main>
+        <section class="left-side">
+            <p>
+                Mantenha-se na régua ou mude seu visual por completo com Don Matheus! Faça uma visita e conheça nossos serviços.
+            </p>
+            <iframe id="mapa" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d228.35682120431682!2d-46.65049064662398!3d-23.686357444769772!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce45005d05c281%3A0xdeb1876a6dcaff3d!2sStudio%20Don%20Matheus!5e0!3m2!1spt-BR!2sbr!4v1787503799568!5m2!1spt-BR!2sbr" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </section>
+        
+        <section class="right-side">
+            <div class="formulário">
+                <h2>Marque um horário agora mesmo!</h2>
+                
+                <label>Selecione o serviço desejado</label>
+                <select class="input-box" name="Serviço" id="Seletor de Serviço">
+                    <option value="Corte">Corte</option>
+                    <option value="Pézinho">Pézinho</option>
+                    <option value="Barba">Barba</option>
+                    <option value="Corte e Barba">Corte e Barba</option>
+                </select>
+                
+                <div class="agenda-selector">
+                    <div class="agenda-date-controls">
+                        <button class="agenda-nav" id="agenda-prev" type="button" aria-label="Dia anterior">&lt;</button>
+                        <label for="agenda-date">Escolha a data</label>
+                        <input class="input-box" id="agenda-date" type="date">
+                        <button class="agenda-nav" id="agenda-next" type="button" aria-label="Próximo dia">&gt;</button>
+                    </div>
+                    <div class="agenda-days" aria-label="Horários próximos">
+                        <section class="agenda-day" id="agenda-previous-day">
+                            <button class="agenda-day-header" id="agenda-previous-header" type="button"></button>
+                            <div class="time-slots" id="agenda-previous-slots"></div>
+                        </section>
+                        <section class="agenda-day agenda-day-current" id="agenda-current-day">
+                            <div class="agenda-day-header" id="agenda-current-header"></div>
+                            <div class="time-slots" id="agenda-current-slots"></div>
+                        </section>
+                        <section class="agenda-day" id="agenda-next-day">
+                            <button class="agenda-day-header" id="agenda-next-header" type="button"></button>
+                            <div class="time-slots" id="agenda-next-slots"></div>
+                        </section>
+                    </div>
+                </div>
+
+                <p class="agenda-legend"><span class="agenda-legend-marker" aria-hidden="true"></span> Horário indisponível</p>
+                <p class="agenda-feedback" id="agenda-feedback" role="status" aria-live="polite"></p>
+                <button class="agenda-retry" id="retry-agenda" type="button" hidden>Recarregar horários</button>
+                <button id="book-appointment" type="button">AGENDAR</button>
+            </div>
+        </section>
+        
+        <dialog class="formulário" id="login-dialog">
+            <input class="input-box" id="nomeDeUsuario" type="text" placeholder="Usuário">
+            <input class="input-box" id="senhaDeUsuario" type="password" placeholder="Senha">
+            <button>Entrar</button>
+        </dialog>
+    </main>
+    
+    <script src="scripts/showLoginCard.js"></script>
+    <script type="module" src="scripts/agenda.js"></script>
+</body>
+</html>
