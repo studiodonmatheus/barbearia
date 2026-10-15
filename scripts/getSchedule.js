@@ -1,6 +1,18 @@
 import { supabase } from './supabaseClient.js'
 
 const TABELA = 'Horarios'
+const TABELA_SERVICOS = 'services'
+
+export async function obterServicos() {
+    const { data, error } = await supabase
+        .from(TABELA_SERVICOS)
+        .select('id,name,price')
+        .eq('active', true)
+        .order('name')
+
+    if (error) throw error
+    return data ?? []
+}
 
 export async function obterHorarios(dataInicio, dataFim) {
     const { data, error } = await supabase
@@ -22,4 +34,3 @@ export async function inserirReserva(data, horaInicio, horaFim) {
 
     if (error) throw error
 }
-

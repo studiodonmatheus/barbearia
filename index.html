@@ -51,12 +51,9 @@
             <div class="formulário">
                 <h2>Marque um horário agora mesmo!</h2>
                 
-                <label>Selecione o serviço desejado</label>
-                <select class="input-box" name="Serviço" id="Seletor de Serviço">
-                    <option value="Corte">Corte</option>
-                    <option value="Pézinho">Pézinho</option>
-                    <option value="Barba">Barba</option>
-                    <option value="Corte e Barba">Corte e Barba</option>
+                <label for="service-select">Selecione o serviço desejado</label>
+                <select class="input-box" name="Serviço" id="service-select" required>
+                    <option value="">Carregando serviços...</option>
                 </select>
                 
                 <details class="agenda-selector" id="agenda-panel">

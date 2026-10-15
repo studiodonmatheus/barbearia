@@ -1,4 +1,4 @@
-import { inserirReserva, obterHorarios } from './getSchedule.js';
+import { inserirReserva, obterHorarios, obterServicos } from './getSchedule.js';
 
 const hoje = new Date();
 hoje.setHours(0, 0, 0, 0);
@@ -13,6 +13,9 @@ let horarios = {};
 let reservas = [];
 let disponibilidade = 'carregando';
 let salvandoReserva = false;
+let servicosDisponiveis = false;
+let erroAoCarregarHorarios = false;
+let erroAoCarregarServicos = false;
 let temporizadorExpediente = null;
 const configuracaoAgenda = { abertura: 10, fechamento: 17 };
 
@@ -57,6 +60,21 @@ function horarioIndisponivel(data, hora) {
         || status === 'inativo'
         || reservaSobrepoeHorario(data, hora)
         || horarioJaPassou(data, hora);
+}
+
+function atualizarFeedbackCarregamento() {
+    const feedback = document.getElementById('agenda-feedback');
+    if (erroAoCarregarHorarios) {
+        feedback.textContent = 'Não foi possível carregar os horários. Tente novamente.';
+    } else if (erroAoCarregarServicos) {
+        feedback.textContent = 'Não foi possível carregar os serviços. Tente novamente mais tarde.';
+    } else if (disponibilidade === 'carregando') {
+        feedback.textContent = 'Carregando disponibilidade...';
+    } else if (!servicosDisponiveis) {
+        feedback.textContent = 'Nenhum serviço disponível para agendamento no momento.';
+    } else {
+        feedback.textContent = '';
+    }
 }
 
 function formatarHorario(hora) {
@@ -225,9 +243,10 @@ function renderizarAgenda() {
     cabecalhoProximo.disabled = proximaData > limiteData;
     cabecalhoProximo.onclick = () => moverFoco(1);
 
-    document.getElementById('retry-agenda').hidden = disponibilidade !== 'erro';
+    document.getElementById('retry-agenda').hidden = disponibilidade !== 'erro' && !erroAoCarregarServicos;
     document.getElementById('book-appointment').disabled = disponibilidade !== 'pronta'
         || salvandoReserva
+        || !servicosDisponiveis
         || !horarioSelecionado;
 
     renderizarColuna('agenda-previous-slots', dataAnterior, false);
@@ -237,27 +256,55 @@ function renderizarAgenda() {
 
 async function carregarHorarios() {
     disponibilidade = 'carregando';
-    document.getElementById('agenda-feedback').textContent = 'Carregando disponibilidade...';
+    erroAoCarregarHorarios = false;
+    atualizarFeedbackCarregamento();
     renderizarAgenda();
 
     try {
         reservas = await obterHorarios(formatarDataInput(hoje), formatarDataInput(limiteData));
         disponibilidade = 'pronta';
-        document.getElementById('agenda-feedback').textContent = '';
+        atualizarFeedbackCarregamento();
         avancarSeDiaSemDisponibilidade();
     } catch (error) {
         console.error('Erro ao carregar horários:', error);
         disponibilidade = 'erro';
-        document.getElementById('agenda-feedback').textContent = 'Não foi possível carregar os horários. Tente novamente.';
+        erroAoCarregarHorarios = true;
+        atualizarFeedbackCarregamento();
     }
 
     renderizarAgenda();
     agendarAvancoExpediente();
 }
 
+async function carregarServicos() {
+    const seletor = document.getElementById('service-select');
+    seletor.disabled = true;
+    try {
+        const servicos = await obterServicos();
+        seletor.replaceChildren(new Option('Selecione um serviço', ''));
+        for (const servico of servicos) {
+            seletor.add(new Option(`${servico.name} — R$ ${Number(servico.price).toFixed(2).replace('.', ',')}`, servico.id));
+        }
+        servicosDisponiveis = servicos.length > 0;
+        erroAoCarregarServicos = false;
+        if (servicosDisponiveis) {
+            seletor.value = servicos[0].id;
+            seletor.disabled = false;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar serviços:', error);
+        erroAoCarregarServicos = true;
+    }
+    atualizarFeedbackCarregamento();
+    renderizarAgenda();
+}
+
 document.getElementById('agenda-prev').addEventListener('click', () => moverFoco(-1));
 document.getElementById('agenda-next').addEventListener('click', () => moverFoco(1));
-document.getElementById('retry-agenda').addEventListener('click', carregarHorarios);
+document.getElementById('retry-agenda').addEventListener('click', async () => {
+    if (disponibilidade === 'erro') await carregarHorarios();
+    if (erroAoCarregarServicos) await carregarServicos();
+});
 
 const painelAgenda = document.getElementById('agenda-panel');
 painelAgenda.addEventListener('toggle', () => {
@@ -279,6 +326,11 @@ document.getElementById('agenda-date').addEventListener('change', (event) => {
     }
 });
 
+document.getElementById('service-select').addEventListener('change', () => {
+    atualizarFeedbackCarregamento();
+    renderizarAgenda();
+});
+
 document.getElementById('book-appointment').addEventListener('click', async () => {
     const feedback = document.getElementById('agenda-feedback');
 
@@ -287,7 +339,12 @@ document.getElementById('book-appointment').addEventListener('click', async () =
         return;
     }
 
-    const servico = document.getElementById('Seletor de Serviço').value;
+    const seletorServico = document.getElementById('service-select');
+    const servico = seletorServico.options[seletorServico.selectedIndex]?.textContent?.split(' — ')[0];
+    if (!servicosDisponiveis || !seletorServico.value) {
+        feedback.textContent = 'Selecione um serviço disponível para continuar.';
+        return;
+    }
     const [data, hora] = horarioSelecionado.split(' ');
     const [ano, mes, dia] = data.split('-');
     const dataReserva = new Date(`${data}T00:00:00`);
@@ -364,3 +421,4 @@ window.resetarHorario = (data, hora) => {
 
 renderizarAgenda();
 carregarHorarios();
+carregarServicos();

@@ -1,3 +1,4 @@
+import { verificarAutorizacao } from './auth.js'
 import { supabase } from './supabaseClient.js'
 
 const loginButton = document.getElementById('login-button')
@@ -8,12 +9,13 @@ const loginPassword = document.getElementById('login-password')
 const loginFeedback = document.getElementById('login-feedback')
 const loginSubmit = document.getElementById('login-submit')
 let loginEmAndamento = false
+const retornoAoAdmin = new URLSearchParams(window.location.search).get('redirect') === 'admin'
 
 function atualizarBotaoLogin(autenticado) {
   if (autenticado) {
     loginButton.dataset.authenticated = 'true'
-    loginButton.setAttribute('aria-label', 'Sair da conta')
-    loginButton.title = 'Sair da conta'
+    loginButton.setAttribute('aria-label', 'Abrir painel administrativo')
+    loginButton.title = 'Abrir painel administrativo'
     return
   }
 
@@ -22,37 +24,10 @@ function atualizarBotaoLogin(autenticado) {
   loginButton.title = 'Entrar'
 }
 
-async function verificarAutorizacao(userId) {
-  const { data, error } = await supabase
-    .from('usuarios_autorizados')
-    .select('user_id')
-    .eq('user_id', userId)
-    .eq('ativo', true)
-    .maybeSingle()
-
-  return !error && Boolean(data)
-}
-
-async function sair() {
-  try {
-    const { error } = await supabase.auth.signOut({ scope: 'local' })
-    if (error) throw error
-
-    atualizarBotaoLogin(false)
-    loginForm.reset()
-    loginFeedback.textContent = ''
-  } catch {
-    loginFeedback.textContent = 'Não foi possível encerrar a sessão. Tente novamente.'
-    loginDialog.showModal()
-  }
-}
-
 loginButton.addEventListener('click', async () => {
-  if (loginButton.dataset.authenticated !== 'true') return
-
-  loginButton.disabled = true
-  await sair()
-  loginButton.disabled = false
+  if (loginButton.dataset.authenticated === 'true') {
+    window.location.assign('admin.html')
+  }
 })
 
 loginForm.addEventListener('submit', async (event) => {
@@ -69,25 +44,26 @@ loginForm.addEventListener('submit', async (event) => {
       password: loginPassword.value
     })
 
-    if (error || !data.user) {
-      loginFeedback.textContent = 'Não foi possível entrar. Verifique as credenciais e a autorização da conta.'
-      return
-    }
+    if (error) throw error
+    if (!data.user) throw new Error('Não foi possível confirmar a conta.')
 
     const autorizado = await verificarAutorizacao(data.user.id)
     if (!autorizado) {
-      await supabase.auth.signOut({ scope: 'local' })
-      loginFeedback.textContent = 'Não foi possível entrar. Verifique as credenciais e a autorização da conta.'
-      return
+      const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' })
+      if (signOutError) throw signOutError
+      throw new Error('Esta conta não está autorizada a acessar a administração.')
     }
 
-    atualizarBotaoLogin(true)
-    loginDialog.close()
-    loginForm.reset()
-    loginFeedback.textContent = ''
-  } catch {
-    await supabase.auth.signOut({ scope: 'local' })
-    loginFeedback.textContent = 'Não foi possível entrar. Verifique as credenciais e a autorização da conta.'
+    window.location.replace('admin.html')
+  } catch (error) {
+    let feedback = error.message || 'Não foi possível entrar. Verifique as credenciais e a autorização da conta.'
+    try {
+      const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' })
+      if (signOutError) feedback += ` Não foi possível encerrar a sessão: ${signOutError.message}`
+    } catch (signOutError) {
+      feedback += ` Não foi possível encerrar a sessão: ${signOutError.message}`
+    }
+    loginFeedback.textContent = feedback
   } finally {
     loginPassword.value = ''
     loginSubmit.disabled = false
@@ -102,18 +78,23 @@ supabase.auth.onAuthStateChange((event) => {
 async function restaurarSessao() {
   try {
     const { data, error } = await supabase.auth.getSession()
-    if (error || !data.session) return
+    if (error) throw error
+    if (!data.session) return
 
     const autorizado = await verificarAutorizacao(data.session.user.id)
     if (!autorizado) {
-      await supabase.auth.signOut({ scope: 'local' })
+      const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' })
+      if (signOutError) throw signOutError
+      if (retornoAoAdmin) loginFeedback.textContent = 'Esta conta não está autorizada a acessar a administração.'
       return
     }
 
     atualizarBotaoLogin(true)
-  } catch {
-    await supabase.auth.signOut({ scope: 'local' })
+    if (retornoAoAdmin) window.location.replace('admin.html')
+  } catch (error) {
+    loginFeedback.textContent = error.message || 'Não foi possível restaurar a sessão.'
   }
 }
 
+if (retornoAoAdmin) loginDialog.showModal()
 restaurarSessao()
