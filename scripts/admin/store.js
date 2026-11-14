@@ -75,12 +75,15 @@ export function createAdminStore() {
       date,
       time: String(input.time || input.appointment_time || '').slice(0, 5),
       client: String(input.client || '').trim(),
+      phone: String(input.phone || '').trim(),
+      reservationId: String(input.reservationId || ''),
+      bookingDataId: String(input.bookingDataId || ''),
       serviceId: String(input.serviceId || input.service_id || ''),
       status: normalizeStatus(input.status),
       price: numericPrice != null && Number.isFinite(numericPrice) && numericPrice >= 0 ? numericPrice : null,
       notes: String(input.notes || '').trim(),
       endTime: String(input.endTime || '').slice(0, 5),
-      source: input.source === 'public' ? 'public' : 'admin',
+      source: ['public', 'booking'].includes(input.source) ? input.source : 'admin',
     }
   }
 
@@ -248,12 +251,16 @@ export function createAdminStore() {
     },
     updatePublicReservation(id, updates = {}) {
       const existing = appointments.find((appointment) => appointment.id === String(id))
-      if (!existing || existing.source !== 'public') throw new Error('Reserva pública não encontrada.')
+      if (!existing || !['public', 'booking'].includes(existing.source)) {
+        throw new Error('Reserva pública não encontrada.')
+      }
       const changed = normalizeAppointment({
         ...existing,
         ...updates,
-        id: `public:${updates.date}:${updates.time}`,
-        source: 'public',
+        id: existing.id,
+        reservationId: updates.reservationId ?? existing.reservationId,
+        bookingDataId: existing.bookingDataId,
+        source: existing.source,
       })
       if (!changed.date || !/^([01]\d|2[0-3]):[0-5]\d$/.test(changed.time)) {
         throw new Error('Escolha uma data e um horário válidos.')

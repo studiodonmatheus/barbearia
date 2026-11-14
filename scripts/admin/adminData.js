@@ -3,6 +3,7 @@ import { supabase } from '../shared/supabaseClient.js'
 
 const TABELA_HORARIOS = 'Horarios'
 const CHAVE_NOMES_CLIENTES = 'donmatheus.admin.client-names.v1'
+const TABELA_DADOS_CLIENTE = 'booking_customer_data'
 const CAMPOS_SERVICO = 'id,name,price,duration_minutes,active'
 const CAMPOS_AGENDAMENTO = 'id,service_id,appointment_date,appointment_time,status,price'
 
@@ -36,20 +37,57 @@ function mapAppointment(row, localNames) {
     serviceId: row.service_id,
     status: row.status,
     price: Number(row.price),
+    phone: '',
   }
 }
 
-function mapPublicReservation(row) {
+function mapPublicReservation(row, customer = null) {
+  if (customer) {
+    return {
+      id: `booking:${customer.id}`,
+      bookingDataId: customer.id,
+      reservationId: row.id,
+      date: row.dia_selecionado,
+      time: String(row.hora_inicio).slice(0, 5),
+      endTime: String(row.hora_fim).slice(0, 5),
+      client: customer.customer_name || 'Cliente',
+      phone: customer.contact_number || '',
+      serviceId: customer.service_id || '',
+      status: customer.status,
+      price: customer.price == null ? null : Number(customer.price),
+      source: 'booking',
+    }
+  }
+
   return {
     id: `public:${row.dia_selecionado}:${String(row.hora_inicio).slice(0, 5)}`,
+    reservationId: row.id,
     date: row.dia_selecionado,
     time: String(row.hora_inicio).slice(0, 5),
     endTime: String(row.hora_fim).slice(0, 5),
-    client: 'Reserva pública',
+    client: 'Período indisponível',
+    phone: '',
     serviceId: '',
     status: 'scheduled',
     price: null,
     source: 'public',
+  }
+}
+
+function mapCancelledBooking(customer) {
+  return {
+    id: `booking:${customer.id}`,
+    bookingDataId: customer.id,
+    reservationId: '',
+    date: customer.appointment_date,
+    time: String(customer.appointment_time).slice(0, 5),
+    endTime: timeAfterMinutes(customer.appointment_time, 30).slice(0, 5),
+    client: customer.customer_name || 'Cliente',
+    phone: customer.contact_number || '',
+    serviceId: customer.service_id || '',
+    status: customer.status,
+    price: customer.price == null ? null : Number(customer.price),
+    source: 'booking',
   }
 }
 
@@ -68,24 +106,35 @@ async function loadDashboardData(panel) {
   const session = await obterSessaoAutorizada()
   if (!session) return false
 
-  const [servicesResult, appointmentsResult, reservationsResult] = await Promise.all([
+  const [servicesResult, appointmentsResult, reservationsResult, customerDataResult] = await Promise.all([
     supabase.from('services').select(CAMPOS_SERVICO).order('name'),
     supabase.from('appointments').select(CAMPOS_AGENDAMENTO).order('appointment_date').order('appointment_time'),
-    supabase.from(TABELA_HORARIOS).select('dia_selecionado,hora_inicio,hora_fim').order('dia_selecionado').order('hora_inicio'),
+    supabase.from(TABELA_HORARIOS).select('id,dia_selecionado,hora_inicio,hora_fim').order('dia_selecionado').order('hora_inicio'),
+    supabase.from(TABELA_DADOS_CLIENTE)
+      .select('id,reservation_id,customer_name,contact_number,service_id,price,status,appointment_date,appointment_time'),
   ])
   if (servicesResult.error) throw servicesResult.error
   if (appointmentsResult.error) throw appointmentsResult.error
   if (reservationsResult.error) throw reservationsResult.error
+  if (customerDataResult.error) throw customerDataResult.error
 
   const localNames = carregarNomesLocais()
   const appointments = (appointmentsResult.data || []).map((row) => mapAppointment(row, localNames))
+  const customerByReservationId = new Map(
+    (customerDataResult.data || [])
+      .filter((row) => row.reservation_id != null)
+      .map((row) => [String(row.reservation_id), row]),
+  )
   const occupiedSlots = new Set(appointments.map((item) => `${item.date} ${item.time}`))
   const publicReservations = (reservationsResult.data || [])
-    .map(mapPublicReservation)
+    .map((row) => mapPublicReservation(row, customerByReservationId.get(String(row.id))))
     .filter((item) => !occupiedSlots.has(`${item.date} ${item.time}`))
+  const cancelledBookings = (customerDataResult.data || [])
+    .filter((row) => row.reservation_id == null && row.status === 'cancelled')
+    .map(mapCancelledBooking)
 
   panel.setServices((servicesResult.data || []).map(mapService))
-  panel.setAppointments([...appointments, ...publicReservations])
+  panel.setAppointments([...appointments, ...publicReservations, ...cancelledBookings])
   return true
 }
 
@@ -174,8 +223,9 @@ async function createBlockedPeriod(input) {
   const conflicts = await findConflictingReservations(input.date, start, end)
   if (conflicts.length) throw new Error('Esse período já contém uma reserva ou outro bloqueio.')
 
-  await insertReservation(input.date, start, end)
+  const reservationId = await insertReservation(input.date, start, end)
   return mapPublicReservation({
+    id: reservationId,
     dia_selecionado: input.date,
     hora_inicio: start,
     hora_fim: end,
@@ -213,12 +263,13 @@ async function findConflictingReservations(date, start, end, ownReservation) {
 }
 
 async function insertReservation(date, start, end) {
-  const { error } = await supabase.from(TABELA_HORARIOS).insert({
+  const { data, error } = await supabase.from(TABELA_HORARIOS).insert({
     dia_selecionado: date,
     hora_inicio: start,
     hora_fim: end,
-  })
+  }).select('id').single()
   if (error) throw error
+  return data.id
 }
 
 async function deleteReservation(date, start, end) {
@@ -348,6 +399,7 @@ async function updateAppointment(id, changes) {
 
 async function updatePublicReservation(appointment, changes) {
   if (!appointment || appointment.source !== 'public') throw new Error('Reserva pública não encontrada.')
+  if (!appointment.reservationId) throw new Error('O identificador da reserva pública está ausente. Recarregue o painel.')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(changes.date)) throw new Error('Escolha uma data válida.')
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(changes.time)) throw new Error('Escolha um horário válido.')
 
@@ -365,28 +417,65 @@ async function updatePublicReservation(appointment, changes) {
       time: appointment.time,
     })
     if (conflicts.length) throw new Error('Esse horário já está reservado. Escolha outro horário.')
-    await insertReservation(changes.date, newStart, newEnd)
-    try {
-      await deleteReservation(appointment.date, formatTime(appointment.time), formatTime(appointment.endTime))
-    } catch (error) {
-      try {
-        await deleteReservation(changes.date, newStart, newEnd)
-      } catch (rollbackError) {
-        throw new Error(`Não foi possível mover a reserva (${error.message}) nem remover o novo bloqueio (${rollbackError.message}).`)
-      }
-      throw error
-    }
+    const { error } = await supabase.from(TABELA_HORARIOS).update({
+      dia_selecionado: changes.date,
+      hora_inicio: newStart,
+      hora_fim: newEnd,
+    }).eq('id', appointment.reservationId)
+    if (error) throw error
   }
 
   return mapPublicReservation({
+    id: appointment.reservationId,
     dia_selecionado: changes.date,
     hora_inicio: newStart,
     hora_fim: newEnd,
+  }, appointment.phone
+    ? { [appointment.reservationId]: { customer_name: appointment.client, contact_number: appointment.phone } }
+    : {})
+}
+
+async function updatePublicBooking(appointment, changes) {
+  if (!appointment || appointment.source !== 'booking') throw new Error('Agendamento público não encontrado.')
+  if (!appointment.bookingDataId) throw new Error('O identificador do agendamento está ausente. Recarregue o painel.')
+  if (!changes.client?.trim()) throw new Error('Informe o nome do cliente.')
+  if (!changes.serviceId) throw new Error('Selecione um serviço.')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(changes.date)) throw new Error('Escolha uma data válida.')
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(changes.time)) throw new Error('Escolha um horário válido.')
+  if (!Number.isFinite(Number(changes.price)) || Number(changes.price) < 0) {
+    throw new Error('Informe um preço válido para o atendimento.')
+  }
+  if (!['scheduled', 'completed', 'cancelled'].includes(changes.status)) {
+    throw new Error('Selecione uma situação válida.')
+  }
+
+  const { data: reservationId, error } = await supabase.rpc('update_public_booking', {
+    p_booking_id: appointment.bookingDataId,
+    p_date: changes.date,
+    p_start: formatTime(changes.time),
+    p_service_id: changes.serviceId,
+    p_price: Number(changes.price),
+    p_status: changes.status,
+    p_customer_name: changes.client.trim(),
   })
+  if (error) throw error
+
+  return {
+    ...appointment,
+    reservationId: reservationId == null ? '' : String(reservationId),
+    date: changes.date,
+    time: changes.time,
+    endTime: timeAfterMinutes(changes.time, 30).slice(0, 5),
+    client: changes.client.trim(),
+    serviceId: changes.serviceId,
+    price: Number(changes.price),
+    status: changes.status,
+  }
 }
 
 async function cancelPublicReservation(appointment) {
   if (!appointment || appointment.source !== 'public') throw new Error('Reserva pública não encontrada.')
+  if (!appointment.reservationId) throw new Error('O identificador da reserva pública está ausente. Recarregue o painel.')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(appointment.date)
     || !/^([01]\d|2[0-3]):[0-5]\d$/.test(appointment.time)
     || !/^([01]\d|2[0-3]):[0-5]\d$/.test(appointment.endTime)) {
@@ -394,10 +483,8 @@ async function cancelPublicReservation(appointment) {
   }
 
   const { data, error } = await supabase.from(TABELA_HORARIOS).delete()
-    .eq('dia_selecionado', appointment.date)
-    .eq('hora_inicio', formatTime(appointment.time))
-    .eq('hora_fim', formatTime(appointment.endTime))
-    .select('dia_selecionado')
+    .eq('id', appointment.reservationId)
+    .select('id')
   if (error) throw error
   if (!data?.length) throw new Error('A reserva pública não foi encontrada ou já foi cancelada.')
 }
@@ -409,5 +496,6 @@ export const adminData = Object.freeze({
   createBlockedPeriod,
   updateAppointment,
   updatePublicReservation,
+  updatePublicBooking,
   cancelPublicReservation,
 })

@@ -132,7 +132,6 @@
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div class="day-selector-copy">
-            <span class="selector-caption">DIA SELECIONADO</span>
             <h2 id="agenda-selected-date-label">—</h2>
           </div>
           <button class="arrow-btn" id="agenda-next-day" type="button" aria-label="Próximo dia">
@@ -189,27 +188,25 @@
   <dialog class="admin-dialog" id="appointment-dialog" aria-labelledby="appointment-dialog-title">
     <form id="appointment-form" novalidate>
       <div class="dialog-heading">
-        <div><p class="eyebrow">AGENDA</p><h2 id="appointment-dialog-title">Novo agendamento</h2></div>
+        <div><h2 id="appointment-dialog-title">Novo agendamento</h2></div>
         <button class="dialog-close" type="button" data-close-dialog="appointment-dialog" aria-label="Fechar">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m18 6-12 12M6 6l12 12"/></svg>
         </button>
       </div>
-      <p class="dialog-description" id="appointment-dialog-description">Cadastre os dados do atendimento.</p>
       <div id="appointment-client-fields">
         <label class="field-label" for="appointment-client">Nome do cliente</label>
         <input class="input-box admin-input" id="appointment-client" name="client" type="text" maxlength="100" placeholder="Nome do cliente" required autocomplete="name">
-        <small class="field-help">O nome fica salvo sem criptografia somente neste navegador; não é enviado ao Supabase.</small>
+        <small class="field-help">O nome adicionado aqui ficará salvo somente neste navegador.</small>
       </div>
       <div id="appointment-service-fields">
         <label class="field-label" for="appointment-service">Serviço</label>
         <select class="input-box admin-input" id="appointment-service" name="serviceId" required></select>
-        <div class="inline-hint" id="appointment-service-hint"></div>
       </div>
       <div class="form-grid-two">
         <div><label class="field-label" for="appointment-date">Data</label><input class="input-box admin-input" id="appointment-date" name="date" type="date" required></div>
         <div><label class="field-label" for="appointment-time">Horário</label><input class="input-box admin-input" id="appointment-time" name="time" type="time" required></div>
       </div>
-      <div id="appointment-price-fields"><label class="field-label" for="appointment-price">Preço deste atendimento (R$)</label><input class="input-box admin-input" id="appointment-price" name="price" type="number" min="0" step="0.01" required inputmode="decimal"><small class="field-help">Preenchido com o preço do serviço. Você pode ajustar para este atendimento.</small></div>
+      <div id="appointment-price-fields"><label class="field-label" for="appointment-price">Preço deste atendimento (R$)</label><input class="input-box admin-input" id="appointment-price" name="price" type="number" min="0" step="0.01" required inputmode="decimal"><small class="field-help">Preenchido com o preço do serviço. Você também pode ajustar por atendimento.</small></div>
       <div id="appointment-status-field" hidden>
         <label class="field-label" for="appointment-status">Situação</label>
         <select class="input-box admin-input" id="appointment-status" name="status">
@@ -226,12 +223,11 @@
   <dialog class="admin-dialog" id="block-period-dialog" aria-labelledby="block-period-dialog-title">
     <form id="block-period-form" novalidate>
       <div class="dialog-heading">
-        <div><p class="eyebrow">AGENDA</p><h2 id="block-period-dialog-title">Bloquear período</h2></div>
+        <div><h2 id="block-period-dialog-title">Bloquear período</h2></div>
         <button class="dialog-close" type="button" data-close-dialog="block-period-dialog" aria-label="Fechar">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m18 6-12 12M6 6l12 12"/></svg>
         </button>
       </div>
-      <p class="dialog-description">O período ficará indisponível para novas reservas online.</p>
       <label class="field-label" for="block-period-date">Data</label>
       <input class="input-box admin-input" id="block-period-date" name="date" type="date" required>
       <div class="form-grid-two">
