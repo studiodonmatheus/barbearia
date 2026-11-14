@@ -8,14 +8,24 @@ const CAMPOS_SERVICO = 'id,name,price,duration_minutes,active'
 const CAMPOS_AGENDAMENTO = 'id,service_id,appointment_date,appointment_time,status,price'
 
 function carregarNomesLocais() {
-  const raw = localStorage.getItem(CHAVE_NOMES_CLIENTES)
-  if (!raw) return {}
+  try {
+    const raw = localStorage.getItem(CHAVE_NOMES_CLIENTES)
+    if (!raw) return {}
 
-  const nomes = JSON.parse(raw)
-  if (!nomes || typeof nomes !== 'object' || Array.isArray(nomes)) {
-    throw new Error('Os nomes de clientes armazenados neste navegador estão em um formato inválido.')
+    const nomes = JSON.parse(raw)
+    if (!nomes || typeof nomes !== 'object' || Array.isArray(nomes)) {
+      localStorage.removeItem(CHAVE_NOMES_CLIENTES)
+      return {}
+    }
+    return nomes
+  } catch (error) {
+    try {
+      localStorage.removeItem(CHAVE_NOMES_CLIENTES)
+    } catch {
+      // Ignora falhas ao limpar dados corruptos locais.
+    }
+    return {}
   }
-  return nomes
 }
 
 function mapService(row) {
@@ -425,14 +435,21 @@ async function updatePublicReservation(appointment, changes) {
     if (error) throw error
   }
 
+  const customer = {
+    id: appointment.bookingDataId || appointment.reservationId || appointment.id,
+    customer_name: appointment.client || 'Cliente',
+    contact_number: appointment.phone || '',
+    service_id: appointment.serviceId || null,
+    status: appointment.status || 'scheduled',
+    price: appointment.price ?? null,
+  }
+
   return mapPublicReservation({
     id: appointment.reservationId,
     dia_selecionado: changes.date,
     hora_inicio: newStart,
     hora_fim: newEnd,
-  }, appointment.phone
-    ? { [appointment.reservationId]: { customer_name: appointment.client, contact_number: appointment.phone } }
-    : {})
+  }, customer)
 }
 
 async function updatePublicBooking(appointment, changes) {
