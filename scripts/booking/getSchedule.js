@@ -25,11 +25,14 @@ export async function obterHorarios(dataInicio, dataFim) {
     return data ?? []
 }
 
-export async function inserirReserva(data, horaInicio, horaFim) {
-    const { error } = await supabase.from(TABELA).insert({
-        dia_selecionado: data,
-        hora_inicio: horaInicio,
-        hora_fim: horaFim
+export async function inserirReserva(data, horaInicio, horaFim, nomeCliente, telefoneContato, servicoId) {
+    const { error } = await supabase.rpc('create_public_booking', {
+        p_date: data,
+        p_start: horaInicio,
+        p_end: horaFim,
+        p_customer_name: nomeCliente,
+        p_contact_number: telefoneContato,
+        p_service_id: servicoId
     })
 
     if (error) throw error

@@ -395,6 +395,35 @@ button {
     margin-top: 0;
 }
 
+.agenda-privacy-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    align-self: center;
+    margin-top: 10px;
+    color: var(--accent-gold);
+    font-size: 0.82rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.agenda-privacy-link svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+}
+
+.agenda-privacy-link:hover {
+    color: var(--accent-gold-hover);
+}
+
+.agenda-privacy-link:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 3px;
+}
+
 button:hover:not(:disabled) {
     background-color: var(--accent-gold-hover);
     transform: translateY(-1px);

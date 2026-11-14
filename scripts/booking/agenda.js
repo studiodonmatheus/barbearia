@@ -24,8 +24,13 @@ const dropdownHorarios = document.getElementById('agenda-time-dropdown');
 const listaHorarios = document.getElementById('agenda-time-options');
 const mensagemListaHorarios = document.getElementById('agenda-time-empty');
 const seletorServico = document.getElementById('service-select');
+const campoNomeCliente = document.getElementById('customer-name');
+const campoTelefoneCliente = document.getElementById('customer-phone');
 const feedback = document.getElementById('agenda-feedback');
 const botaoAgendar = document.getElementById('book-appointment');
+const dialogoPrivacidade = document.getElementById('privacy-dialog');
+const botaoAbrirPrivacidade = document.getElementById('open-privacy-dialog');
+const botaoFecharPrivacidade = document.getElementById('close-privacy-dialog');
 
 let listaHorarioAberta = false;
 
@@ -61,6 +66,27 @@ function formatarHorario(minutos) {
 
 function horarioValido(hora) {
     return /^([01]\d|2[0-3]):([0-5]\d)$/.test(hora);
+}
+
+function obterDadosCliente() {
+    const nome = campoNomeCliente.value.trim();
+    const digitos = campoTelefoneCliente.value.replace(/\D/g, '');
+    const telefoneNacional = digitos.startsWith('55') && [12, 13].includes(digitos.length)
+        ? digitos.slice(2)
+        : digitos;
+
+    if (!nome || nome.length > 100) {
+        atualizarFeedbackReserva('Informe seu nome (até 100 caracteres).', 'error');
+        campoNomeCliente.focus();
+        return null;
+    }
+    if (!/^[1-9]\d[2-9]\d{7,8}$/.test(telefoneNacional)) {
+        atualizarFeedbackReserva('Informe um telefone brasileiro válido com DDD.', 'error');
+        campoTelefoneCliente.focus();
+        return null;
+    }
+
+    return { nome, telefone: `+55${telefoneNacional}` };
 }
 
 function horarioJaPassou(data, hora) {
@@ -389,6 +415,17 @@ seletorServico.addEventListener('change', () => {
     renderizarAgenda();
 });
 
+botaoAbrirPrivacidade.addEventListener('click', () => dialogoPrivacidade.showModal());
+botaoAbrirPrivacidade.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    dialogoPrivacidade.showModal();
+});
+botaoFecharPrivacidade.addEventListener('click', () => dialogoPrivacidade.close());
+dialogoPrivacidade.addEventListener('click', (event) => {
+    if (event.target === dialogoPrivacidade) dialogoPrivacidade.close();
+});
+
 botaoAgendar.addEventListener('click', async () => {
     if (!validarHorarioSelecionado()) return;
 
@@ -397,6 +434,8 @@ botaoAgendar.addEventListener('click', async () => {
         feedback.textContent = 'Selecione um serviço disponível para continuar.';
         return;
     }
+    const dadosCliente = obterDadosCliente();
+    if (!dadosCliente) return;
 
     const data = seletorData.value;
     const hora = seletorHorario.value;
@@ -419,13 +458,15 @@ botaoAgendar.addEventListener('click', async () => {
             return;
         }
 
-        await inserirReserva(data, `${hora}:00`, horaFim);
+        await inserirReserva(data, `${hora}:00`, horaFim, dadosCliente.nome, dadosCliente.telefone, seletorServico.value);
         reservas.push({
             dia_selecionado: data,
             hora_inicio: `${hora}:00`,
             hora_fim: horaFim
         });
         seletorHorario.value = '';
+        campoNomeCliente.value = '';
+        campoTelefoneCliente.value = '';
         atualizarFeedbackReserva(`Reserva confirmada: ${servico}, ${dia}/${mes}/${ano} às ${hora}.`, 'success');
     } catch (error) {
         console.error('Erro ao salvar reserva:', error);

@@ -226,8 +226,11 @@ import {
         const serviceName = appointment.source === 'public'
           ? 'Reserva ou bloqueio'
           : store.getService(appointment.serviceId)?.name || 'Atendimento';
-        const clientName = appointment.source === 'public' ? 'Período indisponível' : appointment.client || serviceName;
-        return `<td><button type="button" class="upcoming-slot-booked" data-select-agenda-date="${escapeHTML(dateKey)}" title="${escapeHTML(`${clientName} · ${serviceName}`)}"><strong>${escapeHTML(clientName)}</strong><span>${escapeHTML(serviceName)}</span></button></td>`;
+        const clientName = appointment.source === 'public'
+          ? appointment.phone ? appointment.client : 'Período indisponível'
+          : appointment.client || serviceName;
+        const contact = appointment.phone ? ` · ${appointment.phone}` : '';
+        return `<td><button type="button" class="upcoming-slot-booked" data-select-agenda-date="${escapeHTML(dateKey)}" title="${escapeHTML(`${clientName}${contact} · ${serviceName}`)}"><strong>${escapeHTML(clientName)}</strong><span>${escapeHTML(appointment.phone || serviceName)}</span></button></td>`;
       }).join('');
       return `<tr><th scope="row" class="upcoming-time">${escapeHTML(time)}</th>${cells}</tr>`;
     }).join('');
@@ -273,6 +276,7 @@ import {
         ? 'Reserva ou bloqueio de horário'
         : service?.name || 'Serviço não cadastrado';
       const amount = appointment.price != null ? Number(appointment.price) : Number(service?.price) || 0;
+      const hasPrice = appointment.price != null || service?.price != null;
       const isCancelled = appointment.status === STATUS.CANCELLED;
       let actions = '';
       if (appointment.source === 'public') {
@@ -286,7 +290,7 @@ import {
           <div class="schedule-appointment-main">
             <div class="schedule-appointment-top">
               <div><h3 class="schedule-appointment-title">${escapeHTML(appointment.source === 'public' ? 'Período indisponível' : appointment.client || 'Cliente')}</h3><span class="schedule-appointment-service">${escapeHTML(serviceName)}</span></div>
-              <strong class="schedule-appointment-price">${appointment.source === 'public' ? '—' : escapeHTML(formatCurrency(amount))}</strong>
+              <strong class="schedule-appointment-price">${appointment.source === 'public' || !hasPrice ? '—' : escapeHTML(formatCurrency(amount))}</strong>
             </div>
             <div class="schedule-appointment-bottom">${appointment.source === 'public' ? `<span class="status-badge status-scheduled">${icon('clock')}Indisponível</span>` : statusMarkup(appointment.status)}${actions}</div>
           </div>
@@ -371,7 +375,7 @@ import {
     select.disabled = false;
     select.innerHTML = `<option value="">Selecione um serviço</option>${services.map((service) => `<option value="${escapeHTML(service.id)}">${escapeHTML(service.name)} — ${escapeHTML(formatCurrency(service.price))}</option>`).join('')}`;
     if (services.some((service) => service.id === previousValue)) select.value = previousValue;
-    if (hint) hint.textContent = 'O preço é preenchido com o valor do serviço e pode ser ajustado para este atendimento.';
+    if (hint) hint.textContent = 'O preço é preenchido com o valor do serviço e pode ser ajustado por atendimento.';
     updateAppointmentPriceFromService();
   }
 
@@ -437,13 +441,16 @@ import {
   function configureAppointmentDialog(editing, isPublic = false) {
     const appointment = editing ? store.getAppointment(editingAppointmentId) : null;
     $('#appointment-dialog-title').textContent = editing ? (isPublic ? 'Editar período indisponível' : 'Editar agendamento') : 'Novo agendamento';
-    $('#appointment-dialog-description').textContent = isPublic
-      ? 'Reservas públicas e bloqueios manuais compartilham este calendário; você pode alterar somente a data e o horário.'
-      : editing ? 'Altere os dados deste atendimento.' : 'Cadastre os dados do atendimento.';
     $('#appointment-client-fields').hidden = isPublic;
     $('#appointment-service-fields').hidden = isPublic;
     $('#appointment-price-fields').hidden = isPublic;
     $('#appointment-status-field').hidden = !editing || isPublic;
+    const clientHelp = $('#appointment-client-fields .field-help');
+    if (clientHelp) {
+      clientHelp.textContent = appointment?.source === 'booking'
+        ? `Contato informado pelo cliente: ${appointment.phone || 'não informado'}.`
+        : 'O nome adicionado aqui ficará salvo somente neste navegador.';
+    }
     $('#appointment-submit').textContent = editing ? 'Salvar alterações' : 'Salvar agendamento';
     $('#appointment-cancel').hidden = !editing || appointment?.status !== STATUS.SCHEDULED;
     $('#appointment-cancel').textContent = isPublic ? 'Liberar período' : 'Cancelar agendamento';
@@ -573,7 +580,9 @@ import {
     try {
       let appointment;
       if (editingAppointmentId) {
-        appointment = await adminData.updateAppointment(editingAppointmentId, payload);
+        appointment = editingAppointmentSource === 'booking'
+          ? await adminData.updatePublicBooking(currentAppointment, payload)
+          : await adminData.updateAppointment(editingAppointmentId, payload);
         store.updateAppointment(editingAppointmentId, appointment);
       } else {
         appointment = await adminData.createAppointment(payload);
@@ -634,6 +643,12 @@ import {
       if (appointment.source === 'public') {
         await adminData.cancelPublicReservation(appointment);
         store.removeAppointment(appointment.id);
+      } else if (appointment.source === 'booking') {
+        const updated = await adminData.updatePublicBooking(appointment, {
+          ...appointment,
+          status: STATUS.CANCELLED,
+        });
+        store.updatePublicReservation(appointment.id, updated);
       } else {
         await adminData.updateAppointment(appointment.id, { status: STATUS.CANCELLED });
         store.updateAppointment(appointment.id, { status: STATUS.CANCELLED });
@@ -660,8 +675,16 @@ import {
         const appointment = store.getAppointment(id);
         if (!appointment || appointment.source === 'public') return;
         button.disabled = true;
-        await adminData.updateAppointment(id, { status: STATUS.COMPLETED });
-        store.updateAppointment(id, { status: STATUS.COMPLETED });
+        if (appointment.source === 'booking') {
+          const updated = await adminData.updatePublicBooking(appointment, {
+            ...appointment,
+            status: STATUS.COMPLETED,
+          });
+          store.updatePublicReservation(id, updated);
+        } else {
+          await adminData.updateAppointment(id, { status: STATUS.COMPLETED });
+          store.updateAppointment(id, { status: STATUS.COMPLETED });
+        }
         announce(`Atendimento de ${appointment.client} concluído. O faturamento foi atualizado.`);
       }
     } catch (error) {
